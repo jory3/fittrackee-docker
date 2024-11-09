@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  web:
+    image: rymedia/fittrackee
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_APP: fittrackee
+      HOST: 0.0.0.0
+      PORT: 8000
+      APP_SETTINGS: fittrackee.config.ProductionConfig
+      APP_SECRET_KEY: your_secret_key_here
+      APP_WORKERS: 4
+      #APP_LOG: /path/to/log/file.log
+      UPLOAD_FOLDER: /uploads
+      DATABASE_URL: postgresql://fittrackee:fittrackee@db:5432/fittrackee
+      DATABASE_DISABLE_POOLING: 'false'
+      UI_URL: http://localhost:8000
+      #EMAIL_URL: smtp://user:password@smtp.example.com:587
+      #SENDER_EMAIL: sender@example.com
+      REDIS_URL: redis://redis:6379/0
+      # TILE_SERVER_URL: http://tileserver.example.com
+      STATICMAP_SUBDOMAINS: a,b,c
+      MAP_ATTRIBUTION: "Map data © OpenStreetMap contributors"
+      # WEATHER_API_KEY: your_weather_api_key_here
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/uploads
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fittrackee
+      POSTGRES_PASSWORD: fittrackee
+      POSTGRES_DB: fittrackee
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "fittrackee" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  db_data:
+  redis_data:
+  uploads:
